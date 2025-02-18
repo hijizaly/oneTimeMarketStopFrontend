@@ -4,6 +4,8 @@ import ProductsPages from "./features/product";
 import PageNotFound from "./features/auth/pages/PageNotFound.tsx";
 import LoginPage from "./features/auth/pages/LoginPage.tsx";
 import SignUpPage from "./features/auth/pages/SignUpPage.tsx";
+import PrivateRoute from "./features/auth/components/PrivateRoute.tsx";
+import Homepage from "./features/dashboard/pages/Homepage.tsx";
 
 function App() {
 
@@ -20,6 +22,11 @@ function App() {
 
 
             {/*private route*/}
+
+            <Route path='/dashboard' Component={PrivateRoute}>
+                <Route index Component={Homepage} />
+
+            </Route>
 
 
 

@@ -2,22 +2,65 @@ import {NavbarPrivate} from "../../../common/components";
 import React from "react";
 import {useForm} from "react-hook-form";
 import styles from "../styles/LoginPage.module.css";
+import {LogInCredentialType} from "../../../common/types/auth.type.ts";
+import {useAuthentication} from "../hooks/useAuth.ts";
+import {useNavigate} from "react-router-dom";
+import { useQueryClient } from 'react-query'
+import {authLocalStorage} from "../../../common/utilities/authLocalStorage.ts";
 
-type FormData = {
-    email: string;
-    password: string;
-};
 
 const LoginPage: React.FC = () => {
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm<FormData>();
+    } = useForm<LogInCredentialType>();
 
-    const onSubmit = (data: FormData) => {
+    const { mutate: authenticationMutation } = useAuthentication()
+
+
+    const onSubmit = (data: LogInCredentialType) => {
         console.log("Login Data:", data);
-        // Handle login logic here
+
+        authenticationMutation(data, {
+            onSuccess: (responseData) => {
+                if (responseData?.status >= 200) {
+                    console.log("R",responseData)
+
+                    const currentUser = responseData.data
+                    console.log("C",currentUser)
+
+                    queryClient.setQueryData('CURRENT_USER', responseData)
+                    authLocalStorage.resetLocalStorage() //RESET LOCAL STORAGE
+                    authLocalStorage.setAccessToken(currentUser?.token.accessToken) //SET ACCESS TOKEN
+                    authLocalStorage.setRefreshToken(currentUser?.token.accessToken) //SET REFRESH TOKEN
+                    authLocalStorage.setUserDataPayload(currentUser) //SET USER DATA
+                    //
+                    switch (currentUser.role) {
+                        case 'USER':
+                            navigate('/dashboard')
+                            break
+
+                        default:
+                            break
+                    }
+                }
+            },
+            onError: (_error) => {
+                // console.log('E', _error.response.data.message)
+                // @ts-ignore :RUSHING TO DEPLOYMENT
+                alert(_error.response.data.message)
+
+                // const e: { message: string; response: { data: { message: string } } } = _error
+
+                // toastOpener(e?.response?.data.message, 'error')
+                // toastOpener(`${e?.message}`, 'error')
+            }
+        })
+
+
     };
 
     return (
